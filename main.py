@@ -1,25 +1,14 @@
 import cv2
-import argparse
+import numpy as np
 import apriltag
 
-"""
-ap = argparse.ArgumentParser()
-ap.add_argument("-i", "--image", required=True, help="path to input image containing AprilTag")
-args = vars(ap.parse_args())
-"""
-
-print("[INFO] loading image...")
 image = cv2.imread("apriltag_test2.png")
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-print("[INFO] detecting AprilTags...")
-options = apriltag.DetectorOptions(families="tag36h11") #USE 16H5 WHEN TESTING ON FIELD 
+options = apriltag.DetectorOptions(families="tag36h11")
 detector = apriltag.Detector(options)
 results = detector.detect(gray)
 print("[INFO] {} total AprilTags detected".format(len(results)))
-
-pointsProj = []
-pointsModel = []
 
 # loop over the AprilTag detection results
 for r in results:
@@ -43,6 +32,3 @@ for r in results:
 	cv2.putText(image, tagFamily, (ptA[0], ptA[1] - 15),
 		cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 	print("[INFO] tag family: {}".format(tagFamily))
-
-cv2.imshow("Image", image)
-cv2.waitKey(0)
