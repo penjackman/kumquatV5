@@ -59,8 +59,8 @@ for point in pointsProj:
     imgPoints.append(ptPos)
     modelPoints.append(idPositions[ptId]) 
 
-imgPoints = np.array(imgPoints)
-modelPoints = np.array(modelPoints)
+imgPoints = np.array(imgPoints, dtype=np.float32)
+modelPoints = np.array(modelPoints, dtype=np.float32)
 
 print(imgPoints, modelPoints)
 
@@ -68,11 +68,13 @@ camMat = np.array([
     [focal_length, 0, center[0]],
     [0, focal_length, center[1]],
     [0, 0, 1]
-], dtype="double")
+], dtype=np.float32)
 
 distCoefs = np.zeros((4, 1))
 
-success, rotation, translation = cv2.solvePnP(modelPoints, imgPoints, camMat, distCoefs, flags=cv2.SOLVEPNP_ITERATIVE)
+success, rotation, translation, _ = cv2.solvePnPGeneric(modelPoints, imgPoints, camMat, distCoefs, flags=cv2.SOLVEPNP_EPNP)
+
+print(success, rotation, translation);
 
 print(pointsProj)
 cv2.imshow("Image", image)
