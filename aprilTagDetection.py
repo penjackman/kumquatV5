@@ -2,6 +2,7 @@ import cv2
 import argparse
 import apriltag
 import numpy as np
+import json
 
 """
 ap = argparse.ArgumentParser()
@@ -22,7 +23,9 @@ print("[INFO] {} total AprilTags detected".format(len(results)))
 
 pointsProj = []
 #pointsModel = []
-idPositions = {1: (0, 0, 0), 2: (0, 0, 0), 3: (0, 0, 0), 4: (0, 0, 0), 5: (0, 0, 0), 6: (0, 0, 0), 7: (0, 0, 0), 8: (0, 0, 0)}
+#idPositions = {1: (0, 0, 0), 2: (0, 0, 0), 3: (0, 0, 0), 4: (0, 0, 0), 5: (0, 0, 0), 6: (0, 0, 0), 7: (0, 0, 0), 8: (0, 0, 0)}
+posJson = open("./tagPositions.json")
+idPositions = json.load(posJson)
 
 # loop over the AprilTag detection results
 for r in results:
@@ -42,7 +45,7 @@ for r in results:
     (cX, cY) = (int(r.center[0]), int(r.center[1]))
     cv2.circle(image, (cX, cY), 5, (0, 0, 255), -1)
     # draw the tag family on the image
-    pointsProj.append((r.tag_id, (cX, cY)))
+    pointsProj.append((str(r.tag_id), (cX, cY)))
     tagFamily = r.tag_family.decode("utf-8")
     cv2.putText(image, tagFamily, (ptA[0], ptA[1] - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
     print("[INFO] tag family: {}".format(tagFamily))
@@ -73,9 +76,46 @@ camMat = np.array([
 distCoefs = np.zeros((4, 1))
 
 success, rotation, translation, _ = cv2.solvePnPGeneric(modelPoints, imgPoints, camMat, distCoefs, flags=cv2.SOLVEPNP_EPNP)
+translation = translation[0].reshape((3,))
+print(translation);
 
-print(success, rotation, translation);
+#cv2.imshow("Image", image)
 
-print(pointsProj)
-cv2.imshow("Image", image)
+field = cv2.imread("./gamefield_kumquat.png")
+def click_event(event, x, y, flags, params):    
+    if event==cv2.EVENT_LBUTTONDOWN:
+        print(x, ' ', y)
+        
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        b = field[y, x, 0]
+        g = field[y, x, 1]
+        r = field[y, x, 2]
+        cv2.putText(field, str(b) + ',' +
+                    str(g) + ',' + str(r),
+                    (x,y), font, 1,
+                    (255, 255, 0), 2)
+
+"""
+IMAGE COORDINATES
+top left: 293, 180
+top right: 1475, 180
+bottom left (origin): 293, 750
+bottom right: 1475, 750
+REAL FIELD COORDINATES
+top left: 0, 319
+top right: 649, 319
+bottom left (origin): 0, 0
+bottom right: 649, 0
+"""
+
+scale = (1475-293)/649 #using above comment
+
+orig = np.array([297, 750])
+pos = orig + np.array([translation[0], translation[2]]) * scale
+pos = pos.astype(np.int32)
+print(pos)
+cv2.circle(field, orig, 10, (0, 255, 0), thickness=-1)
+cv2.circle(field, pos, 10, (0, 0, 255), thickness=-1)
+cv2.imshow("field", field)
+cv2.setMouseCallback("field", click_event)
 cv2.waitKey(0)
