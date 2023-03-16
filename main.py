@@ -1,34 +1,39 @@
 import cv2
-import numpy as np
+import argparse
 import apriltag
+import numpy as np
+import json
+import aprilTagDetection
+import solvePos
 
-image = cv2.imread("apriltag_test2.png")
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+image = cv2.imread("./assets/apriltag_test3.png")
+image = cv2.pyrDown(cv2.pyrDown(image))
 
-options = apriltag.DetectorOptions(families="tag36h11")
-detector = apriltag.Detector(options)
-results = detector.detect(gray)
-print("[INFO] {} total AprilTags detected".format(len(results)))
+rotation, translation = solvePos.solvePos(image)
 
-# loop over the AprilTag detection results
-for r in results:
-	# extract the bounding box (x, y)-coordinates for the AprilTag
-	# and convert each of the (x, y)-coordinate pairs to integers
-	(ptA, ptB, ptC, ptD) = r.corners
-	ptB = (int(ptB[0]), int(ptB[1]))
-	ptC = (int(ptC[0]), int(ptC[1]))
-	ptD = (int(ptD[0]), int(ptD[1]))
-	ptA = (int(ptA[0]), int(ptA[1]))
-	# draw the bounding box of the AprilTag detection
-	cv2.line(image, ptA, ptB, (0, 255, 0), 2)
-	cv2.line(image, ptB, ptC, (0, 255, 0), 2)
-	cv2.line(image, ptC, ptD, (0, 255, 0), 2)
-	cv2.line(image, ptD, ptA, (0, 255, 0), 2)
-	# draw the center (x, y)-coordinates of the AprilTag
-	(cX, cY) = (int(r.center[0]), int(r.center[1]))
-	cv2.circle(image, (cX, cY), 5, (0, 0, 255), -1)
-	# draw the tag family on the image
-	tagFamily = r.tag_family.decode("utf-8")
-	cv2.putText(image, tagFamily, (ptA[0], ptA[1] - 15),
-		cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-	print("[INFO] tag family: {}".format(tagFamily))
+# showing results
+field = cv2.imread("./assets/gamefield_kumquat.png")
+
+"""
+IMAGE COORDINATES (REDO IF YOU USE A NEW IMAGE)
+top left: 293, 180
+top right: 1475, 180
+bottom left (origin): 293, 750
+bottom right: 1475, 750
+
+REAL FIELD COORDINATES
+top left: 0, 319
+top right: 649, 319
+bottom left (origin): 0, 0
+bottom right: 649, 0
+"""
+
+scale = (1475-293)/649 #using above comment
+
+orig = np.array([297, 750])
+pos = orig + np.array([translation[0], translation[2]]) * scale
+pos = pos.astype(np.int32)
+
+cv2.circle(field, pos, 10, (0, 0, 0), thickness=-1)
+cv2.imshow("field", field)
+cv2.waitKey(0)
